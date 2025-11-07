@@ -87,10 +87,11 @@ for i = 1:n
         Testing_Results(i, 4) = sqrt((mean(navResults.X) - rec_X)^2 + (mean(navResults.Y) - rec_Y)^2 + (mean(navResults.Z) - rec_Z)^2);
         Testing_Results(i, 5) = timeDiff;
     end
-
+    Testing_results(i,6) = d(i).name;
     fprintf("Output Flag %d \n", Testing_Results(i, 2))
     fprintf("Data File Processing is over elapsed time   %7.2f n seconds\n", timeDiff)
-
+    % Saving .mat File
+    save("Testing_Results_SDR.mat");
 end % 1:n Data Sets
 
 %% Post Processing 
