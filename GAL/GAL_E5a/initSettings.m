@@ -44,7 +44,9 @@ settings.skipAcquisition    = 0;
 settings.acqSatelliteList   = [1:36]; 
 % Band around IF to search for satellite signal. Depends on max Doppler.
 % It is single sideband, so the whole search band is tiwce of it.
-settings.acqSearchBand          = 5000;           % [Hz]
+% settings.acqSearchBand          = 5000;           % [Hz]
+settings.acqSearchBand          = 10000;           % [Hz]
+
 % Non-coherent integration times after 1ms coherent integration
 settings.acqNonCohTime      = 15;              %[ms]
 % Threshold for the signal presence decision rule
@@ -101,4 +103,5 @@ settings.CNo.accTime = 0.001;%0.02;
 % Accumulation interval for computing VSM C/No (in ms)
 settings.CNo.VSMinterval = 100;%20;
 %% E5b carrier frequency ===================================================
+
 settings.carrFreqBasis    = 1176.45e6;       %[Hz]
