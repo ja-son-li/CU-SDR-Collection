@@ -25,13 +25,12 @@ rec_pos = [rec_pos; 1614.541];
 
 % Create a array that will hold the output code corresponding to the data
 % set input (n)
-Testing_Results = zeros(n, 6);
+Testing_Results = zeros(n, 5);
 % Column 1  - Index of File
 % Column 2  - Category Flag [1, 2, 3, or 4]
 % Column 3  - Standard Deviation Precision of Navigation Solution
 % Column 4  - Mean Accuracy of Navigation Error (m)
 % Column 5  - Run Time (s) of init per data file
-% Column 6  - Name of File
 
 %% Begin processing Data Sets
 for i = 1:n
@@ -88,7 +87,6 @@ for i = 1:n
         Testing_Results(i, 4) = sqrt((mean(navResults.X) - rec_X)^2 + (mean(navResults.Y) - rec_Y)^2 + (mean(navResults.Z) - rec_Z)^2);
         Testing_Results(i, 5) = timeDiff;
     end
-    Testing_results(i,6) = d(i).name;
     fprintf("Output Flag %d \n", Testing_Results(i, 2))
     fprintf("Data File Processing is over elapsed time   %7.2f n seconds\n", timeDiff)
     % Saving .mat File
