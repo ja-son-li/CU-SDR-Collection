@@ -2,6 +2,11 @@ clear all; clc; close all;
 
 %% Initialize Data Sets and Preallocating data types
 Folder='/homes/jali7001/Documents/ASEN6091/Data/E5a';
+str2="/";
+all_files = dir(Folder);
+d = dir([Folder, '/*.bin']);
+n = length(d(not([d.isdir])));
+
 % Putting the directory in order
 d_sort = datetime({d.date}', 'Format', 'dd-MMM-uuuu HH:mm:ss');
 [~, idx] = sort(d_sort);
