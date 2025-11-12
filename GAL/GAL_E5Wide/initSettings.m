@@ -56,7 +56,7 @@ settings.skipNumberOfBytes     = 0;
 % This is a "default" name of the data file (signal record) to be used in
 % the post-processing mode
 
-settings.fileName           = '../../../L5b_IF20KHz_FS18MHz.bin';
+settings.fileName           = '/home/jason/Documents/School/ASEN6091_Receiver/Data/E5FB/E5_FULLBAND_1.bin';
 
 % Data type used to store one sample
 settings.dataType           = 'schar';
@@ -67,9 +67,13 @@ settings.dataType           = 'schar';
 settings.fileType           = 2;
 
 % Intermediate, sampling and code frequencies
-settings.IF                 = 20e3;             % [Hz]
-settings.samplingFreq       = 18e6;             % [Hz]
+settings.IF                 = 1191.795e6;             % [Hz]
+settings.samplingFreq       = 54e6;             % [Hz]
 settings.codeFreqBasis      = 10.23e6;          % [Hz]
+
+% if the IF is not centered at the E5 center frequency 
+settings.E5a_offset = -15.345e6;   % relative offset of E5a
+settings.E5b_offset = 15.345e6;   % relative offset of E5b
 
 % Define number of chips in a code period
 settings.codeLength          = 10230;
@@ -92,6 +96,7 @@ settings.acqThreshold       = 4.5;
 settings.acqSearchStep      = 60;                % [Hz]
 % Sampling rate threshold for downsampling 
 settings.resamplingThreshold    = 45e6;           % [Hz]
+
 % Enable/dissable use of downsampling for acquisition
 settings.resamplingflag         = 0;              % 0 - Off; 1 - On
 %% Tracking loops settings ================================================

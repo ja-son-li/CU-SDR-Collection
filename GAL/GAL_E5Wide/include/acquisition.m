@@ -1,4 +1,4 @@
-function acqResults = acquisitionJMBF(longSignal, settings)
+function acqResults = acquisition(longSignal, settings)
 %Function performs cold start acquisition on the collected "data". It
 %searches for GPS signals of all satellites, which are listed in field
 %"acqSatelliteList" in the settings structure. Function saves code phase
@@ -162,10 +162,14 @@ for PRN = settings.acqSatelliteList
 
     %% Coarse acquisition ===========================================
     % Generate all E5bI+E5bQ primary codes and sample them according to the sampling freq.
+    E5aICodes = makeE5aITable(PRN,settings);
+    E5aQCodes = makeE5aQTable(PRN,settings);
     E5bICodesTable = makeE5bITable(settings,PRN);
     E5bQCodesTable = makeE5bQTable(settings,PRN);
 
     % generate local code duplicate to do correlate
+    localE5aICode = [E5aICodes, zeros(1,samplesPerCode)];
+    localE5aQCode = [E5aQCodes, zeros(1,samplesPerCode)];
     localE5bICode = [E5bICodesTable, zeros(1,samplesPerCode)];
     localE5bQCode = [E5bQCodesTable, zeros(1,samplesPerCode)];
 
@@ -173,6 +177,8 @@ for PRN = settings.acqSatelliteList
     results = zeros(numberOfFreqBins, samplesPerCode*2);
 
     %--- Perform DFT of PRN code ------------------------------------------
+    E5aICodeFreqDom = conj(fft(localE5aICode));
+    E5aQCodeFreqDom = conj(fft(localE5aQCode));
     E5bICodeFreqDom = conj(fft(localE5bICode));
     E5bQCodeFreqDom = conj(fft(localE5bQCode));
 
@@ -184,7 +190,9 @@ for PRN = settings.acqSatelliteList
             settings.acqSearchStep * (freqBinIndex - 1);
 
         %--- Generate local sine and cosine -------------------------------
-        sigCarr = exp(-1i * coarseFreqBin(freqBinIndex) * phasePoints);
+        % sigCarr = exp(-1i * coarseFreqBin(freqBinIndex) * phasePoints);
+        sigCarr_a = exp(-1i * (coarseFreqBin(freqBinIndex) + settings.E5a_offset) * phasePoints);
+        sigCarr_b = exp(-1i * (coarseFreqBin(freqBinIndex) + settings.E5b_offset) * phasePoints);
 
         %--- Do correlation -----------------------------------------------
         for nonCohIndex = 1: settings.acqNonCohTime
@@ -192,19 +200,33 @@ for PRN = settings.acqSatelliteList
             signal = longSignal((nonCohIndex - 1) * samplesPerCode + ...
                 1 : (nonCohIndex + 1) * samplesPerCode);
             % "Remove carrier" from the signal
-            I      = real(sigCarr .* signal);
-            Q      = imag(sigCarr .* signal);
+            Ia      = real(sigCarr_a .* signal);
+            Qa      = imag(sigCarr_a .* signal);
+            Ib      = real(sigCarr_b .* signal);
+            Qb      = imag(sigCarr_b .* signal);
+
 
             %--- Convert the baseband signal to frequency domain --------------
-            IQfreqDom = fft(I + 1i*Q);
-
+            % IQfreqDom = fft(I + 1i*Q);
+            IQa = fft(Ia + 1i*Qa);
+            IQb = fft(Ib + 1i*Qb);
             %--- Multiplication in the frequency domain (correlation in time
             %domain)
-            convE5bI = IQfreqDom .* E5bICodeFreqDom;
-            convE5bQ = IQfreqDom .* E5bQCodeFreqDom;
+            convE5aI = IQa .* E5aICodeFreqDom;
+            convE5aQ = IQa .* E5aQCodeFreqDom;
+            convE5bI = IQb .* E5bICodeFreqDom;
+            convE5bQ = IQb .* E5bQCodeFreqDom;
 
             %--- Perform inverse DFT and store correlation results ------------
-            cohRresult = abs(ifft(convE5bI)) + abs(ifft(convE5bQ));
+            corrE5a = ifft(convE5aI) + ifft(convE5aQ);
+            corrE5b = ifft(convE5bI) + ifft(convE5bQ);
+
+            % cohRresult = abs(ifft(convE5bI)) + abs(ifft(convE5bQ));
+            phi = pi/2;  % sideband phase relationship (AltBOC(15,10))
+            % cohRresult = abs(corrE5a + exp(1j*phi) .* corrE5b);
+            cohRresult = abs(corrE5b);
+
+
             % Non-coherent integration
             results(freqBinIndex, :) = results(freqBinIndex, :) + cohRresult;
         end % nonCohIndex = 1: settings.acqNonCohTime
