@@ -123,16 +123,13 @@ if (fid > 0)
     disp (['   Tracking started at ', datestr(startTime)]);
 
     % Process all channels for given data block
-    [trkResults, ~] = tracking(fid, channel, settings);
+    [trkResults, ~] = tracking_parallel(fid, channel, settings);
     %plotTracking(1:settings.numberOfChannels, trkResults, settings, trkPath);
     save( 'trkResults')
     % Close the data file
     fclose(fid);
     
-    disp(['   Tracking is over (elapsed time ', ...
-                                        datestr(now - startTime, 13), ')'])     
-
-               
+    disp(['   Tracking is over (elapsed time ', datestr(now - startTime, 13), ')'])     
 
 %% Calculate navigation solutions =========================================
     disp('   Calculating navigation solutions...');
