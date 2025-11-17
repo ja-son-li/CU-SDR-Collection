@@ -127,6 +127,7 @@ ts = 1 / settings.samplingFreq;
 % Find phase points of 2ms local carrier wave (1ms for local duplicate,
 % the other 1ms for zero padding)
 phasePoints = (0 : (samplesPerCode * 2 -1)) * 2 * pi * ts;
+tPoints = (0 : (samplesPerCode * 2 -1)) * ts;
 
 % Number of the frequency bins for the specified search band
 numberOfFreqBins = round(settings.acqSearchBand * 2 / settings.acqSearchStep) + 1;
@@ -173,14 +174,25 @@ for PRN = settings.acqSatelliteList
     localE5bICode = [E5bICodesTable, zeros(1,samplesPerCode)];
     localE5bQCode = [E5bQCodesTable, zeros(1,samplesPerCode)];
 
+
+    % Complex subband codes
+    E5a = localE5aICode + 1j*localE5aQCode;   % complex E5a subchannel
+    E5b = localE5bICode + 1j*localE5bQCode;   % complex E5b subchannel
+    
+    % altboc replica
+    f_sc = 15.345e6;
+    localAltBOC = ( ...
+         E5a .* exp(-1j*2*pi*f_sc*tPoints) + ...
+         E5b .* exp(1j*2*pi*f_sc*tPoints) ) / sqrt(2);
+    % localAltBOC = ( ...
+    %      E5a .* exp(-1j*2*pi*f_sc*tPoints) );
     % Search results of all frequency bins and code shifts (for one satellite)
     results = zeros(numberOfFreqBins, samplesPerCode*2);
 
     %--- Perform DFT of PRN code ------------------------------------------
-    E5aICodeFreqDom = conj(fft(localE5aICode));
-    E5aQCodeFreqDom = conj(fft(localE5aQCode));
-    E5bICodeFreqDom = conj(fft(localE5bICode));
-    E5bQCodeFreqDom = conj(fft(localE5bQCode));
+
+    % FFT of the satellite 
+    localFFT = conj(fft(localAltBOC));
 
     %--- Make the correlation for whole frequency band (for all freq. bins)
     for freqBinIndex = 1:numberOfFreqBins
@@ -190,45 +202,20 @@ for PRN = settings.acqSatelliteList
             settings.acqSearchStep * (freqBinIndex - 1);
 
         %--- Generate local sine and cosine -------------------------------
-        % sigCarr = exp(-1i * coarseFreqBin(freqBinIndex) * phasePoints);
-        sigCarr_a = exp(-1i * (coarseFreqBin(freqBinIndex) + settings.E5a_offset) * phasePoints);
-        sigCarr_b = exp(-1i * (coarseFreqBin(freqBinIndex) + settings.E5b_offset) * phasePoints);
+        sigCarr = exp(-1i * ( coarseFreqBin(freqBinIndex) - settings.IF ) * 2*pi*tPoints);
 
         %--- Do correlation -----------------------------------------------
         for nonCohIndex = 1: settings.acqNonCohTime
             % Take 2ms vectors of input data to do correlation
             signal = longSignal((nonCohIndex - 1) * samplesPerCode + ...
                 1 : (nonCohIndex + 1) * samplesPerCode);
-            % "Remove carrier" from the signal
-            Ia      = real(sigCarr_a .* signal);
-            Qa      = imag(sigCarr_a .* signal);
-            Ib      = real(sigCarr_b .* signal);
-            Qb      = imag(sigCarr_b .* signal);
 
-
-            %--- Convert the baseband signal to frequency domain --------------
-            % IQfreqDom = fft(I + 1i*Q);
-            IQa = fft(Ia + 1i*Qa);
-            IQb = fft(Ib + 1i*Qb);
-            %--- Multiplication in the frequency domain (correlation in time
-            %domain)
-            convE5aI = IQa .* E5aICodeFreqDom;
-            convE5aQ = IQa .* E5aQCodeFreqDom;
-            convE5bI = IQb .* E5bICodeFreqDom;
-            convE5bQ = IQb .* E5bQCodeFreqDom;
-
-            %--- Perform inverse DFT and store correlation results ------------
-            corrE5a = ifft(convE5aI) + ifft(convE5aQ);
-            corrE5b = ifft(convE5bI) + ifft(convE5bQ);
-
-            % cohRresult = abs(ifft(convE5bI)) + abs(ifft(convE5bQ));
-            phi = pi/2;  % sideband phase relationship (AltBOC(15,10))
-            % cohRresult = abs(corrE5a + exp(1j*phi) .* corrE5b);
-            cohRresult = abs(corrE5b);
-
+            % acquisition 
+            IQ = fft(sigCarr.*signal);
+            corrAltBOC = ifft(IQ .* localFFT);
 
             % Non-coherent integration
-            results(freqBinIndex, :) = results(freqBinIndex, :) + cohRresult;
+            results(freqBinIndex, :) = results(freqBinIndex, :) + abs(corrAltBOC);
         end % nonCohIndex = 1: settings.acqNonCohTime
     end % freqBinIndex = 1:numberOfFreqBins
 

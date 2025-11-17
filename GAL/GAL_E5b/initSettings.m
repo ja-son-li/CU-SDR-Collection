@@ -56,7 +56,11 @@ settings.skipNumberOfBytes     = 0;
 % This is a "default" name of the data file (signal record) to be used in
 % the post-processing mode
 
+<<<<<<< Updated upstream
 settings.fileName           = 'E:\ASEN 6091 E5b\test_E5_1.bin';
+=======
+settings.fileName           = '/home/jason/Documents/School/ASEN6091_Receiver/Data/E5FB/E5_FULLBAND_1.bin';
+>>>>>>> Stashed changes
 
 % Data type used to store one sample
 settings.dataType           = 'schar';
@@ -67,8 +71,8 @@ settings.dataType           = 'schar';
 settings.fileType           = 2;
 
 % Intermediate, sampling and code frequencies
-settings.IF                 = 20e3;             % [Hz]
-settings.samplingFreq       = 18e6;             % [Hz]
+settings.IF                 = 15.345e6 ;             % [Hz]
+settings.samplingFreq       = 54e6;             % [Hz]
 settings.codeFreqBasis      = 10.23e6;          % [Hz]
 
 % Define number of chips in a code period

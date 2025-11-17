@@ -1,7 +1,7 @@
 clear all; clc; close all;
 
 %% Initialize Data Sets and Preallocating data types
-Folder='/homes/jali7001/Documents/ASEN6091/Data/E5a';
+Folder='/home/jason/Documents/School/ASEN6091_Receiver/midterm/data/G2';
 str2="/";
 all_files = dir(Folder);
 d = dir([Folder, '/*.bin']);
@@ -33,7 +33,7 @@ Testing_Results = zeros(n, 5);
 % Column 5  - Run Time (s) of init per data file
 
 %% Begin processing Data Sets
-for i = 1:n
+for i = 17:26
     % Try running init process for data set, n
     fprintf("\n \n ========== %d ========== \n", i)
     try
@@ -53,7 +53,7 @@ for i = 1:n
     load("acqResults.mat")
     load("trkResults.mat")
     load('navResults.mat')
-
+    save(sprintf('file_%d.mat',i),'navResults','trkResult')
     if Testing_Results(i, 2) == 1
         % If there is a error, do nothing
         Testing_Results(i, 3) = NaN;
