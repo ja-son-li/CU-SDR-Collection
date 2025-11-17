@@ -1,4 +1,4 @@
-function acqResults = acquisitionJMBF(longSignal, settings)
+function acqResults = acquisition(longSignal, settings)
 %Function performs cold start acquisition on the collected "data". It
 %searches for GPS signals of all satellites, which are listed in field
 %"acqSatelliteList" in the settings structure. Function saves code phase

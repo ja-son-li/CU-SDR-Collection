@@ -63,13 +63,12 @@ function [pseudoranges,transmitTime,localTime] = ...
 % Transmitting Time of all channels at current measurement sample location
 transmitTime = inf(1, settings.numberOfChannels);
 
-%--- For all channels in the list ... 
+%--- For all channels in the list 
 for channelNr = channelList
     
-    % Find index of I_P stream whose integration contains current 
-    % measurment point location 
+    % Find index of I_P stream whose integration contains current measurment point location 
     for index = 1: length(trackResults(channelNr).absoluteSample)
-        if(trackResults(channelNr).absoluteSample(index) > currMeasSample )
+        if(trackResults(channelNr).absoluteSample(index) > currMeasSample)
             break
         end 
     end
@@ -79,26 +78,20 @@ for channelNr = channelList
     codePhaseStep = trackResults(channelNr).codeFreq(index) / settings.samplingFreq;
     
     % Code phase from start of a PRN code to current measement sample location  
-    codePhase     = trackResults(channelNr).remCodePhase(index) +  ...
-                          codePhaseStep * (currMeasSample - ...
-                          trackResults(channelNr).absoluteSample(index) );
+    codePhase = trackResults(channelNr).remCodePhase(index) +  codePhaseStep * (currMeasSample - trackResults(channelNr).absoluteSample(index) );
     
     % Transmitting Time (in unite of s)at current measurement sample location
     % codePhase/settings.codeLength: fraction part of a PRN code
     % index - subFrameStart(channelNr): integer number of PRN code
-    transmitTime(channelNr) =  (codePhase/settings.codeLength + index - ...
-                          subFrameStart(channelNr)) * settings.codeLength/...
-                          settings.codeFreqBasis + TOW(channelNr);
+    transmitTime(channelNr) =  (codePhase/settings.codeLength + index - subFrameStart(channelNr)) * settings.codeLength/settings.codeFreqBasis + TOW(channelNr);
 end
 
-% At first time of fix, local time is initialized by transmitTime and 
-% settings.startOffset
+% At first time of fix, local time is initialized by transmitTime and settings.startOffset
 if (localTime == inf)
     maxTime   = max(transmitTime(channelList));
     localTime = maxTime + settings.startOffset/1000;  
 end
 
 %--- Convert travel time to a distance ------------------------------------
-% The speed of light must be converted from meters per second to meters
-% per millisecond. 
+% The speed of light must be converted from meters per second to meters per millisecond. 
 pseudoranges    = (localTime - transmitTime) * settings.c; 

@@ -70,8 +70,8 @@ for channelNr = activeChnList
     fprintf('Decoding NAV for PRN %02d -------------------- \n', PRN);
     
     %=== Decode ephemerides and TOW of the first sub-frame ==================
-    [eph(PRN),subFrameStart(channelNr)] = ...
-                                  NAVdecoding(trackResults(channelNr).I_P,settings);
+    [eph(PRN),subFrameStart(channelNr)] = NAVdecoding(trackResults(channelNr).I_P,settings);
+
     %--- Exclude satellite if it does not have the necessary nav data -----
     if (eph(PRN).flag == 1)
         fprintf('    The requisite messages for PRN %02d all decoded!\n', PRN);
@@ -99,8 +99,7 @@ sampleStart = zeros(1, settings.numberOfChannels);
 sampleEnd = inf(1, settings.numberOfChannels);
 
 for channelNr = activeChnList
-    sampleStart(channelNr) = ...
-        trackResults(channelNr).absoluteSample(subFrameStart(channelNr));
+    sampleStart(channelNr) = trackResults(channelNr).absoluteSample(subFrameStart(channelNr));
     
     sampleEnd(channelNr) = trackResults(channelNr).absoluteSample(end);
 end
@@ -143,12 +142,10 @@ for currMeasNr = 1:measNrSum
     fprintf('Fix: Processing %02d of %02d \n', currMeasNr,measNrSum);
     %% Initialization of current measurement ==============================
     % Exclude satellites, that are belove elevation mask
-    activeChnList = intersect(find(satElev >= settings.elevationMask), ...
-        readyChnList);
+    activeChnList = intersect(find(satElev >= settings.elevationMask), readyChnList);
     
     % Save list of satellites used for position calculation
-    navSolutions.PRN(activeChnList, currMeasNr) = ...
-        [trackResults(activeChnList).PRN];
+    navSolutions.PRN(activeChnList, currMeasNr) = [trackResults(activeChnList).PRN];
     
     % These two lines help the skyPlot function. The satellites excluded
     % do to elevation mask will not "jump" to possition (0,0) in the sky
@@ -157,10 +154,8 @@ for currMeasNr = 1:measNrSum
     navSolutions.az(:, currMeasNr) = NaN(settings.numberOfChannels, 1);
     
     % Signal transmitting time of each channel at measurement sample location
-    navSolutions.transmitTime(:, currMeasNr) = ...
-        NaN(settings.numberOfChannels, 1);
-    navSolutions.satClkCorr(:, currMeasNr) = ...
-        NaN(settings.numberOfChannels, 1);
+    navSolutions.transmitTime(:, currMeasNr) = NaN(settings.numberOfChannels, 1);
+    navSolutions.satClkCorr(:, currMeasNr) = NaN(settings.numberOfChannels, 1);
     
     % Position index of current measurement time in IF signal stream
     % (in unit IF signal sample point)
@@ -169,38 +164,29 @@ for currMeasNr = 1:measNrSum
     %% Find pseudoranges ======================================================
     % Raw pseudorange = (localTime - transmitTime) * light speed (in m)
     % All output are 1 by settings.numberOfChannels columme vecters.
-    [navSolutions.rawP(:, currMeasNr),transmitTime,localTime]=  ...
-        calculatePseudoranges(trackResults,subFrameStart,TOW, ...
-        currMeasSample,localTime,activeChnList, settings);
+    [navSolutions.rawP(:, currMeasNr),transmitTime,localTime]= calculatePseudoranges(trackResults,subFrameStart,TOW, currMeasSample,localTime,activeChnList, settings);
     
     % Save transmitTime
-    navSolutions.transmitTime(activeChnList, currMeasNr) = ...
-        transmitTime(activeChnList);
+    navSolutions.transmitTime(activeChnList, currMeasNr) = transmitTime(activeChnList);
     
     %% Find satellites positions and clocks corrections =======================
     % Outputs are all colume vectors corresponding to activeChnList
-    [satPositions, satClkCorr] = satpos(transmitTime(activeChnList), ...
-                                        [trackResults(activeChnList).PRN], eph); 
-                                                                      
+    [satPositions, satClkCorr] = satpos(transmitTime(activeChnList), [trackResults(activeChnList).PRN], eph);                  
     
     % Save satClkCorr
     navSolutions.satClkCorr(activeChnList, currMeasNr) = satClkCorr;
     
     %% Find receiver position =================================================
-    % 3D receiver position can be found only if signals from more than 3
-    % satellites are available
+    % 3D receiver position can be found only if signals from more than 3 satellites are available
     if size(activeChnList, 2) > 3
         
         %=== Calculate receiver position ==================================
         % Correct pseudorange for SV clock error
-        clkCorrRawP = navSolutions.rawP(activeChnList, currMeasNr)' + ...
-            satClkCorr * settings.c;
+        clkCorrRawP = navSolutions.rawP(activeChnList, currMeasNr)' + satClkCorr * settings.c;
         
         % Calculate receiver position
-        [xyzdt,navSolutions.el(activeChnList, currMeasNr), ...
-            navSolutions.az(activeChnList, currMeasNr), ...
-            navSolutions.DOP(:, currMeasNr)] =...
-            leastSquarePos(satPositions, clkCorrRawP, settings);
+        [xyzdt,navSolutions.el(activeChnList, currMeasNr), navSolutions.az(activeChnList, currMeasNr), ...
+            navSolutions.DOP(:, currMeasNr)] = leastSquarePos(satPositions, clkCorrRawP, settings);
         
         %=== Save results ===========================================================
         % Receiver position in ECEF
@@ -208,8 +194,7 @@ for currMeasNr = 1:measNrSum
         navSolutions.Y(currMeasNr)  = xyzdt(2);
         navSolutions.Z(currMeasNr)  = xyzdt(3);
         
-        % For first calculation of solution, clock error will be set
-        % to be zero
+        % For first calculation of solution, clock error will be set to be zero
         if (currMeasNr == 1)
             navSolutions.dt(currMeasNr) = 0;  % in unit of (m)
         else
@@ -243,15 +228,12 @@ for currMeasNr = 1:measNrSum
             5);
         
         %=== Convert to UTM coordinate system =============================
-        navSolutions.utmZone = findUtmZone(navSolutions.latitude(currMeasNr), ...
-            navSolutions.longitude(currMeasNr));
+        navSolutions.utmZone = findUtmZone(navSolutions.latitude(currMeasNr), navSolutions.longitude(currMeasNr));
         
         % Position in ENU
-        [navSolutions.E(currMeasNr), ...
-            navSolutions.N(currMeasNr), ...
+        [navSolutions.E(currMeasNr), navSolutions.N(currMeasNr), ...
             navSolutions.U(currMeasNr)] = cart2utm(xyzdt(1), xyzdt(2), ...
-            xyzdt(3), ...
-            navSolutions.utmZone);
+            xyzdt(3), navSolutions.utmZone);
         
     else
         %--- There are not enough satellites to find 3D position ----------
@@ -274,10 +256,8 @@ for currMeasNr = 1:measNrSum
         navSolutions.N(currMeasNr)           = NaN;
         navSolutions.U(currMeasNr)           = NaN;
         
-        navSolutions.az(activeChnList, currMeasNr) = ...
-            NaN(1, length(activeChnList));
-        navSolutions.el(activeChnList, currMeasNr) = ...
-            NaN(1, length(activeChnList));
+        navSolutions.az(activeChnList, currMeasNr) = NaN(1, length(activeChnList));
+        navSolutions.el(activeChnList, currMeasNr) = NaN(1, length(activeChnList));
         
         % TODO: Know issue. Satellite positions are not updated if the
         % satellites are excluded do to elevation mask. Therefore rasing

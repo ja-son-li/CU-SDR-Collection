@@ -81,8 +81,7 @@ if (fid > 0)
     if ((settings.skipAcquisition == 0) || ~exist('acqResults', 'var'))
         
         % Find number of samples per spreading code
-        samplesPerCode = round(settings.samplingFreq / ...
-                           (settings.codeFreqBasis / settings.codeLength));
+        samplesPerCode = round(settings.samplingFreq / (settings.codeFreqBasis / settings.codeLength));
         
         % Read data for acquisition. At least 102ms of signal are needed 
 		% for the fine frequency estimation
@@ -98,7 +97,8 @@ if (fid > 0)
 
         %--- Do the acquisition -------------------------------------------
         disp ('   Acquiring satellites...');
-        acqResults = acquisition(data, settings);
+        % acqResults = acquisition(data, settings);
+        acqResults = acquisition_parallel(data, settings);
 
         save('acqResults')
     end
@@ -123,6 +123,7 @@ if (fid > 0)
     disp (['   Tracking started at ', datestr(startTime)]);
 
     % Process all channels for given data block
+    % [trkResults, ~] = tracking(fid, channel, settings);
     [trkResults, ~] = tracking_parallel(fid, channel, settings);
     %plotTracking(1:settings.numberOfChannels, trkResults, settings, trkPath);
     save( 'trkResults')

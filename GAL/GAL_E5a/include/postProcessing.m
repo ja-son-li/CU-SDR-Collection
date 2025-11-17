@@ -80,8 +80,7 @@ fseek(fid, dataAdaptCoeff*settings.skipNumberOfBytes, 'bof');
 if ((settings.skipAcquisition == 0) || ~exist('acqResults', 'var'))
     
     % Find number of samples per spreading code
-    samplesPerCode = round(settings.samplingFreq / ...
-                       (settings.codeFreqBasis / settings.codeLength));
+    samplesPerCode = round(settings.samplingFreq / (settings.codeFreqBasis / settings.codeLength));
     
     
     % At least 42ms of signal are needed for fine frequency estimation
@@ -121,7 +120,7 @@ startTime = now;
 disp (['   Tracking started at ', datestr(startTime)]);
 
 % Process all channels for given data block
-[trkResults, ~] = tracking(fid, channel, settings);
+[trkResults, ~] = tracking_parallel(channel, settings);
 save("trkResults")
 % Close the data file
 fclose(fid);
