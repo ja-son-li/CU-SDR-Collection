@@ -96,6 +96,7 @@ end
 if (localTime == inf)
     maxTime   = max(transmitTime(channelList));
     localTime = maxTime + settings.startOffset/1000;  
+    localTime = 423072.083403755;
 end
 
 %--- Convert travel time to a distance ------------------------------------
