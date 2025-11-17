@@ -56,11 +56,7 @@ settings.skipNumberOfBytes     = 0;
 % This is a "default" name of the data file (signal record) to be used in
 % the post-processing mode
 
-<<<<<<< Updated upstream
-settings.fileName           = 'E:\ASEN 6091 E5b\test_E5_1.bin';
-=======
 settings.fileName           = '/home/jason/Documents/School/ASEN6091_Receiver/Data/E5FB/E5_FULLBAND_1.bin';
->>>>>>> Stashed changes
 
 % Data type used to store one sample
 settings.dataType           = 'schar';
@@ -85,9 +81,11 @@ settings.skipAcquisition    = 0;
 % up acquisition. As of June 2020, in-orbit Galileo SVs includes PRNs:
 % [1 2 3 4 5 7 8 9 11 12 13 14 15 18 19 21 22 24 25 26 27 30 31 33 36]
 settings.acqSatelliteList   = 1:36;
+settings.acqSatelliteList   = [24];
+
 % Band around IF to search for satellite signal. Depends on max Doppler.
 % It is single sideband, so the whole search band is tiwce of it.
-settings.acqSearchBand          = 5000;           % [Hz]
+settings.acqSearchBand          = 10000;           % [Hz]
 % Non-coherent integration times after 1ms coherent integration
 settings.acqNonCohTime      = 15;              %[ms]
 % Threshold for the signal presence decision rule

@@ -39,6 +39,7 @@ addpath include               % The software receiver functions
 addpath Common                % Common functions between differnt SDR receivers
 % addpath ('../IF_Data_Set')    % IF data sets for each SDR receivers
 
+
 %% Print startup ==========================================================
 fprintf(['\n',...
     'Welcome to:  softGNSS\n\n', ...

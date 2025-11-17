@@ -173,26 +173,24 @@ for PRN = settings.acqSatelliteList
     localE5aQCode = [E5aQCodes, zeros(1,samplesPerCode)];
     localE5bICode = [E5bICodesTable, zeros(1,samplesPerCode)];
     localE5bQCode = [E5bQCodesTable, zeros(1,samplesPerCode)];
-
-
-    % Complex subband codes
-    E5a = localE5aICode + 1j*localE5aQCode;   % complex E5a subchannel
-    E5b = localE5bICode + 1j*localE5bQCode;   % complex E5b subchannel
     
-    % altboc replica
-    f_sc = 15.345e6;
-    localAltBOC = ( ...
-         E5a .* exp(-1j*2*pi*f_sc*tPoints) + ...
-         E5b .* exp(1j*2*pi*f_sc*tPoints) ) / sqrt(2);
-    % localAltBOC = ( ...
-    %      E5a .* exp(-1j*2*pi*f_sc*tPoints) );
+    % get altboc 
+    localAltBOC = lookupTableAltBOC(localE5aICode, ...
+                                    localE5bICode, ...
+                                    localE5aQCode, ...
+                                    localE5bQCode, ...
+                                    tPoints);
+
     % Search results of all frequency bins and code shifts (for one satellite)
     results = zeros(numberOfFreqBins, samplesPerCode*2);
 
     %--- Perform DFT of PRN code ------------------------------------------
 
     % FFT of the satellite 
+    % localFFT = conj(fft(localAltBOC));
+    % localFFT_E5a = conj(fft(localAltBOC));
     localFFT = conj(fft(localAltBOC));
+
 
     %--- Make the correlation for whole frequency band (for all freq. bins)
     for freqBinIndex = 1:numberOfFreqBins

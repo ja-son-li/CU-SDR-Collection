@@ -80,19 +80,19 @@ settings.codeLength          = 10230;
 
 %% Acquisition settings ===================================================
 % Skips acquisition in the script postProcessing.m if set to 1
-settings.skipAcquisition    = 0;
+settings.skipAcquisition    = 1;
 % List of satellites to look for. Some satellites can be excluded to speed
 % up acquisition. As of June 2020, in-orbit Galileo SVs includes PRNs:
 % [1 2 3 4 5 7 8 9 11 12 13 14 15 18 19 21 22 24 25 26 27 30 31 33 36]
-settings.acqSatelliteList   = [1:36];
-% settings.acqSatelliteList   = [9];
+% settings.acqSatelliteList   = [1:36];
+settings.acqSatelliteList   = [24];
 
 % Band around IF to search for satellite signal. Depends on max Doppler.
 % It is single sideband, so the whole search band is tiwce of it.
 settings.acqSearchBand          = 10000;           % [Hz]
 % Non-coherent integration times after 1ms coherent integration
-settings.acqNonCohTime      = 15;              %[ms]
-% settings.acqNonCohTime      = 1;              %[ms]
+% settings.acqNonCohTime      = 15;              %[ms]
+settings.acqNonCohTime      = 2;              %[ms]
 
 % Threshold for the signal presence decision rule
 settings.acqThreshold       = 4.5;
