@@ -54,9 +54,7 @@ for satNr = 1 : numOfSatellites
     dt = check_t(transmitTime(satNr) - eph(prn).t_oc);
 
     %--- Calculate clock correction ---------------------------------------
-    satClkCorr(satNr) = (eph(prn).a_f2 * dt + eph(prn).a_f1) * dt + ...
-                         eph(prn).a_f0 - ...
-                         eph(prn).BGD_E1E5a;
+    satClkCorr(satNr) = (eph(prn).a_f2 * dt + eph(prn).a_f1) * dt + eph(prn).a_f0 - eph(prn).BGD_E1E5a;
 
     time = transmitTime(satNr) - satClkCorr(satNr);
 
@@ -111,21 +109,17 @@ for satNr = 1 : numOfSatellites
     Phi = rem(Phi, 2*galPi);
 
     %Correct argument of latitude
-    u = Phi + ...
-        eph(prn).CUC * cos(2*Phi) + ...
-        eph(prn).CUS * sin(2*Phi);
+    u = Phi + eph(prn).CUC * cos(2*Phi) + eph(prn).CUS * sin(2*Phi);
+
     %Correct radius
-    r = A * (1 - eph(prn).e*cos(E)) + ...
-        eph(prn).CRC * cos(2*Phi) + ...
-        eph(prn).CRS * sin(2*Phi);
+    r = A * (1 - eph(prn).e*cos(E)) + eph(prn).CRC * cos(2*Phi) + eph(prn).CRS * sin(2*Phi);
+
     %Correct inclination
-    i = eph(prn).i_0 + eph(prn).iDot * tk + ...
-        eph(prn).CIC * cos(2*Phi) + ...
-        eph(prn).CIS * sin(2*Phi);
+    i = eph(prn).i_0 + eph(prn).iDot * tk + eph(prn).CIC * cos(2*Phi) + eph(prn).CIS * sin(2*Phi);
     
     %Compute the angle between the ascending node and the Greenwich meridian
-    Omega = eph(prn).Omega_0 + (eph(prn).OmegaDot - OmegaE)*tk - ...
-            OmegaE * eph(prn).t_oe;
+    Omega = eph(prn).Omega_0 + (eph(prn).OmegaDot - OmegaE)*tk - OmegaE * eph(prn).t_oe;
+
     %Reduce to between 0 and 360 deg
     Omega = rem(Omega + 2*galPi, 2*galPi);
 
@@ -138,8 +132,6 @@ for satNr = 1 : numOfSatellites
 
 
 %% Include relativistic correction and iono in clock correction -----------
-    satClkCorr(satNr) = (eph(prn).a_f2 * dt + eph(prn).a_f1) * dt + ...
-                         eph(prn).a_f0 - ...
-                         eph(prn).BGD_E1E5a + dtr;
+    satClkCorr(satNr) = (eph(prn).a_f2 * dt + eph(prn).a_f1) * dt + eph(prn).a_f0 - eph(prn).BGD_E1E5a + dtr;
                      
 end % for satNr = 1 : numOfSatellites

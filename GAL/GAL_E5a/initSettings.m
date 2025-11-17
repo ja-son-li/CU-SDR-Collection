@@ -19,7 +19,7 @@ settings.skipNumberOfBytes     = 0;
 % the post-processing mode
 
 % settings.fileName           = '/home/jason/Documents/School/ASEN6091_Receiver/midterm/data/G2/test_L5_82.bin';
-settings.fileName           = '/home/jason/Documents/School/ASEN6091_Receiver/midterm/data/G2/test_L5_24.bin';
+settings.fileName           = 'C:\Users\calvi\Downloads\test_L5_19.bin';
 
 % Data type used to store one sample
 settings.dataType           = 'schar';
