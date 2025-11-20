@@ -131,8 +131,8 @@ phasePoints = (0 : (samplesPerCode * 2 -1)) * 2 * pi * ts;
 
 % Number of the frequency bins for the specified search band
 numberOfFreqBins = round(settings.acqSearchBand * 2 / settings.acqSearchStep) + 1;
-% Carrier frequency bins to be searched
-coarseFreqBin = zeros(1, numberOfFreqBins);
+% Carrier frequency bins to be searched (6091 rewritten)
+%coarseFreqBin = settings.IF + (((numberOfFreqBins-1)/2)*(settings.codeFreqBasis / settings.codeLength):-(settings.codeFreqBasis / settings.codeLength):-(numberOfFreqBins-1)/2*(settings.codeFreqBasis / settings.codeLength));
 
 %--- Initialize acqResults ------------------------------------------------
 % Carrier frequencies of detected signals
@@ -159,6 +159,17 @@ finePhasePoints = (0 : (100*samplesPerCode-1)) * 2 * pi * ts;
 %--- Input signal power for GLRT statistic calculation --------------------
 sigPower = sqrt(var(longSignal(1:samplesPerCode)) * samplesPerCode);
 
+% 6091 Project, FFT matrix for circshift implementation -------------------
+argvec = (-1i*2*pi*settings.IF).*(0:1/settings.samplingFreq:(length(longSignal)/settings.samplingFreq)-(1/settings.samplingFreq));
+longSignalBase = longSignal .* (exp(argvec));
+longSignalFFT = zeros(settings.acqNonCohTime,samplesPerCode*2);
+for nonCohIndex = 1:settings.acqNonCohTime
+    longSignalChunk = longSignalBase((nonCohIndex-1)*samplesPerCode*2+1:(nonCohIndex-1)*samplesPerCode*2+samplesPerCode*2);
+    longSignalFFT(nonCohIndex,:) = fft(longSignalChunk);
+end
+
+% -------------------------------------------------------------------------
+
 % Perform search for all listed PRN numbers ...
 fprintf('(');
 for PRN = settings.acqSatelliteList
@@ -180,26 +191,32 @@ for PRN = settings.acqSatelliteList
     E5aICodeFreqDom = conj(fft(localE5aICode));
     E5aQCodeFreqDom = conj(fft(localE5aQCode));
     %--- Make the correlation for all frequency bins
-    for freqBinIndex = 1:numberOfFreqBins
-
+    freqIndex = 0;
+    for freqBinIndex = -(numberOfFreqBins-1)/2:(numberOfFreqBins-1)/2
+        
+        freqIndex = freqIndex + 1;
         %--- Generate carrier wave frequency grid  -----------------------
-        coarseFreqBin(freqBinIndex) = settings.IF + settings.acqSearchBand - ...
-            settings.acqSearchStep * (freqBinIndex - 1);
+        coarseFreqBin(freqIndex) = settings.IF + settings.acqSearchBand - ...
+           settings.acqSearchStep * (freqIndex - 1);
         %--- Generate local sine and cosine -------------------------------
-        sigCarr = exp(-1i * coarseFreqBin(freqBinIndex) * phasePoints);
+        %_%sigCarr = exp(-1i * coarseFreqBin(freqBinIndex) * phasePoints);
 
         %--- Do correlation -----------------------------------------------
         for nonCohIndex = 1: settings.acqNonCohTime
             % Take 2ms vectors of input data to do correlation
-            signal = longSignal((nonCohIndex - 1) * samplesPerCode + ...
-                1 : (nonCohIndex + 1) * samplesPerCode);
+            %_%signal = longSignal((nonCohIndex - 1) * samplesPerCode + ...
+            %_%    1 : (nonCohIndex + 1) * samplesPerCode);
 
             % "Remove carrier" from the signal
-            I      = real(sigCarr .* signal);
-            Q      = imag(sigCarr .* signal);
+            %_%I      = real(sigCarr .* signal);
+            %_%Q      = imag(sigCarr .* signal);
 
             %--- Convert the baseband signal to frequency domain ----------
-            IQfreqDom = fft(I + 1i*Q);
+            %_%IQfreqDom = fft(I + 1i*Q);
+            
+            % 6091 Circshift Implementation
+            IQfreqDom = circshift(longSignalFFT(nonCohIndex,:),[0,freqBinIndex]);
+
             %--- Multiplication in the frequency domain (correlation in time
             %domain)
             convE5aI = IQfreqDom .* E5aICodeFreqDom;
@@ -207,7 +224,7 @@ for PRN = settings.acqSatelliteList
             %--- Perform inverse DFT and store correlation results --------
             cohRresult = abs(ifft(convE5aI)) + abs(ifft(convE5aQ));
             % Non-coherent integration
-            results(freqBinIndex, :) = results(freqBinIndex, :) + cohRresult;
+            results(freqIndex, :) = results(freqIndex, :) + cohRresult;
         end % nonCohIndex = 1: settings.acqNonCohTime
     end % freqBinIndex = 1:numberOfFreqBins
 
@@ -217,7 +234,25 @@ for PRN = settings.acqSatelliteList
     % Find code phase of the same correlation peak
     [peakSize, codePhase] = max(max(results));
     % Store GLRT statistic
-    acqResults.peakMetric(PRN) = peakSize/sigPower/settings.acqNonCohTime;
+    %acqResults.peakMetric(PRN) = peakSize/sigPower/settings.acqNonCohTime;
+
+    % NEW 6091 Final Project Acqusition metric algorithm ------------------
+    blockID = ceil(codePhase/samplesPerCode);
+    blockStart = (blockID-1)*samplesPerCode+1;
+    blockEnd = blockID*samplesPerCode;
+
+    % primary
+    primaryPeakRange = results(:,blockStart:blockEnd);
+    [peakSize,codePhase] = max(max(primaryPeakRange));
+    % secondary
+    peakBuffer = ceil(samplesPerCode/settings.codeLength);
+    N = size(primaryPeakRange,2);
+    maskID = mod((codePhase-peakBuffer:codePhase+peakBuffer)-1,N)+2;
+    secondaryPeakRange = primaryPeakRange;
+    secondaryPeakRange(acqCoarseBin,maskID) = -inf;
+    [secondPeakSize,~] = max(secondaryPeakRange(acqCoarseBin,:));
+
+    acqResults.peakMetric(PRN) = peakSize/secondPeakSize;
 
     %% Fine resolution frequency search =============================
     % If the result is above threshold, then there is a signal ...
@@ -236,6 +271,9 @@ for PRN = settings.acqSatelliteList
         longE5aQCode = E5aQCode((rem(codeValueIndex, settings.codeLength) + 1));
         % 100ms incoming signal
         sig100ms = longSignal(codePhase:codePhase + 100*samplesPerCode -1);
+
+        % 6091 Project additional datapoint in acqResults
+        acqResults.coarseBin(PRN) = coarseFreqBin(acqCoarseBin);
 
         %--- Search different frequency bins ------------------------------
         for FineBinIndex = 1 : NumOfFineBins

@@ -19,7 +19,8 @@ settings.skipNumberOfBytes     = 0;
 % the post-processing mode
 
 % settings.fileName           = '/home/jason/Documents/School/ASEN6091_Receiver/midterm/data/G2/test_L5_82.bin';
-settings.fileName           = 'C:\Users\calvi\Downloads\test_L5_19.bin';
+%settings.fileName           = 'C:\Users\calvi\Downloads\test_L5_19.bin';
+settings.fileName           = "C:\Users\jasp9644\Downloads\E5_Test\test_L5_10.bin";
 
 % Data type used to store one sample
 settings.dataType           = 'schar';
@@ -51,7 +52,7 @@ settings.acqSearchBand          = 10000;           % [Hz]
 % Non-coherent integration times after 1ms coherent integration
 settings.acqNonCohTime      = 15;              %[ms]
 % Threshold for the signal presence decision rule
-settings.acqThreshold       = 4.5;
+settings.acqThreshold       = 2;
 % Frequency search step for coarse acquisition
 settings.acqSearchStep      = 500;                % [Hz]
 % Sampling rate threshold for downsampling 
