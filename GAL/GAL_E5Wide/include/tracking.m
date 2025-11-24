@@ -147,6 +147,8 @@ for channelNr = 1:settings.numberOfChannels
                 channel(channelNr).codePhase-1), 'bof');
         end
 
+        % ---
+
         % Get a vector with the E5bI tiered code sampled 1x/chip
         E5bICode = generateE5bIcode(channel(channelNr).PRN,2);
         % Then make it possible to do early and late versions
@@ -157,6 +159,41 @@ for channelNr = 1:settings.numberOfChannels
             E5bQcode = generateE5bQcode(channel(channelNr).PRN,1);
             E5bQcode = [E5bQcode(end) E5bQcode E5bQcode(1)]; %#ok<AGROW>
         end
+
+        % % --- 
+        % 
+        % % Generate Code Replicas at 1x chip rate
+        % if (settings.pilotTRKflag == 1)
+        % 
+        %     % Generate 100 ms of E5aI
+        %     E5aI = generateE5aIcode(channel(channelNr).PRN, 2);
+        %     E5aI = size(repmat(E5aI,[1, 5])); % Repeat 5x since overlay is 20 ms
+        % 
+        %     % Generate 100 ms of E5aQ
+        %     E5aQ = generateE5aQcode(channel(channelNr).PRN, 2); 
+        % 
+        %     % Generate 100 ms of E5bI
+        %     E5bI = generateE5bIcode(channel(channelNr).PRN, 2); 
+        %     E5bI = size(repmat(E5bI,[1, 25])); % Repeat 25x since overlay is 4 ms
+        % 
+        %     % Generate 100 ms of E5bQ
+        %     E5bQ = generateE5bQcode(channel(channelNr).PRN, 2); 
+        % 
+        %     % Generate AltBOC signal
+        %     E5code = lookupTableAltBOC(E5aI, E5bI, E5aQ, E5bQ, ((0.001/10230):(0.001/10230):0.1));
+        % 
+        % else
+        % 
+        %     % Generate 1 ms code replicas w/o overlay
+        %     E5aI = generateE5aIcode(channel(channelNr).PRN, 1);
+        %     E5aQ = generateE5aQcode(channel(channelNr).PRN, 1); 
+        %     E5bI = generateE5bIcode(channel(channelNr).PRN, 1);
+        %     E5bQ = generateE5bQcode(channel(channelNr).PRN, 1);
+        %     E5code = lookupTableAltBOC(E5aI, E5bI, E5aQ, E5bQ, ((0.001/10230):(0.001/10230):0.001));
+        % end
+        % 
+        % % ---
+
 
         %--- Perform various initializations ------------------------------
         % DSefine initial code frequency basis of NCO
@@ -395,7 +432,7 @@ for channelNr = 1:settings.numberOfChannels
         end % for loopCnt
 
         % If we got so far, this means that the tracking was successful
-        % Now we only copy status, but it can be update by a lock detector
+        % Now we only copy status, but it can be updated by a lock detector
         % if implemented
         trackResults(channelNr).status  = channel(channelNr).status;
 

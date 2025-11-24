@@ -56,7 +56,8 @@ settings.skipNumberOfBytes     = 0;
 % This is a "default" name of the data file (signal record) to be used in
 % the post-processing mode
 
-settings.fileName           = '/home/jason/Documents/School/ASEN6091_Receiver/Data/E5FB/E5_FULLBAND_1.bin';
+% settings.fileName           = '/home/jason/Documents/School/ASEN6091_Receiver/Data/E5FB/E5_FULLBAND_1.bin';
+settings.fileName          = 'D:\E5FB\E5_FULLBAND_1.bin';
 
 % Data type used to store one sample
 settings.dataType           = 'schar';
@@ -85,7 +86,7 @@ settings.skipAcquisition    = 1;
 % up acquisition. As of June 2020, in-orbit Galileo SVs includes PRNs:
 % [1 2 3 4 5 7 8 9 11 12 13 14 15 18 19 21 22 24 25 26 27 30 31 33 36]
 % settings.acqSatelliteList   = [1:36];
-settings.acqSatelliteList   = [24];
+settings.acqSatelliteList   = 24;
 
 % Band around IF to search for satellite signal. Depends on max Doppler.
 % It is single sideband, so the whole search band is tiwce of it.
@@ -103,6 +104,7 @@ settings.resamplingThreshold    = 45e6;           % [Hz]
 
 % Enable/dissable use of downsampling for acquisition
 settings.resamplingflag         = 0;              % 0 - Off; 1 - On
+
 %% Tracking loops settings ================================================
 % Code tracking loop parameters
 settings.dllDampingRatio         = 0.7;
