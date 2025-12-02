@@ -156,6 +156,17 @@ finePhasePoints = (0 : (100*samplesPerCode-1)) * 2 * pi * ts;
 %--- Input signal power for GLRT statistic calculation --------------------
 sigPower = sqrt(var(longSignal(1:samplesPerCode)) * samplesPerCode);
 
+% 6091 Project, FFT matrix for circshift implementation -------------------
+argvec = (-1i*2*pi*settings.IF).*(0:1/settings.samplingFreq:(length(longSignal)/settings.samplingFreq)-(1/settings.samplingFreq));
+longSignalBase = longSignal .* (exp(argvec));
+longSignalFFT = zeros(settings.acqNonCohTime,samplesPerCode*2);
+for nonCohIndex = 1:settings.acqNonCohTime
+    longSignalChunk = longSignalBase((nonCohIndex-1)*samplesPerCode*2+1:(nonCohIndex-1)*samplesPerCode*2+samplesPerCode*2);
+    longSignalFFT(nonCohIndex,:) = fft(longSignalChunk);
+end
+
+% -------------------------------------------------------------------------
+
 % Perform search for all listed PRN numbers ...
 fprintf('(');
 for PRN = settings.acqSatelliteList
@@ -177,26 +188,28 @@ for PRN = settings.acqSatelliteList
     E5bQCodeFreqDom = conj(fft(localE5bQCode));
 
     %--- Make the correlation for whole frequency band (for all freq. bins)
-    for freqBinIndex = 1:numberOfFreqBins
-
+    freqIndex = 0;
+    for freqBinIndex = -(numberOfFreqBins-1)/2:(numberOfFreqBins-1)/2
+        
+        freqIndex = freqIndex + 1;
         %--- Generate carrier wave frequency grid  -----------------------
-        coarseFreqBin(freqBinIndex) = settings.IF + settings.acqSearchBand - ...
-            settings.acqSearchStep * (freqBinIndex - 1);
-
+        coarseFreqBin(freqIndex) = settings.IF + settings.acqSearchBand - ...
+           settings.acqSearchStep * (freqIndex - 1);
         %--- Generate local sine and cosine -------------------------------
-        sigCarr = exp(-1i * coarseFreqBin(freqBinIndex) * phasePoints);
+        %sigCarr = exp(-1i * coarseFreqBin(freqBinIndex) * phasePoints);
 
         %--- Do correlation -----------------------------------------------
         for nonCohIndex = 1: settings.acqNonCohTime
             % Take 2ms vectors of input data to do correlation
-            signal = longSignal((nonCohIndex - 1) * samplesPerCode + ...
-                1 : (nonCohIndex + 1) * samplesPerCode);
+            %signal = longSignal((nonCohIndex - 1) * samplesPerCode + ...
+            %    1 : (nonCohIndex + 1) * samplesPerCode);
             % "Remove carrier" from the signal
-            I      = real(sigCarr .* signal);
-            Q      = imag(sigCarr .* signal);
+            %I      = real(sigCarr .* signal);
+            %Q      = imag(sigCarr .* signal);
 
             %--- Convert the baseband signal to frequency domain --------------
-            IQfreqDom = fft(I + 1i*Q);
+            %IQfreqDom = fft(I + 1i*Q);
+            IQfreqDom = circshift(longSignalFFT(nonCohIndex,:),[0,freqBinIndex]);
 
             %--- Multiplication in the frequency domain (correlation in time
             %domain)
@@ -206,7 +219,7 @@ for PRN = settings.acqSatelliteList
             %--- Perform inverse DFT and store correlation results ------------
             cohRresult = abs(ifft(convE5bI)) + abs(ifft(convE5bQ));
             % Non-coherent integration
-            results(freqBinIndex, :) = results(freqBinIndex, :) + cohRresult;
+            results(freqIndex, :) = results(freqIndex, :) + cohRresult;
         end % nonCohIndex = 1: settings.acqNonCohTime
     end % freqBinIndex = 1:numberOfFreqBins
 
@@ -216,20 +229,121 @@ for PRN = settings.acqSatelliteList
     % Find code phase of the same correlation peak
     [peakSize, codePhase] = max(max(results));
     % Store GLRT statistic
-    acqResults.peakMetric(PRN) = peakSize/sigPower/settings.acqNonCohTime;
+    %acqResults.peakMetric(PRN) = peakSize/sigPower/settings.acqNonCohTime;
+    
+    % NEW 6091 Final Project Acqusition metric algorithm ------------------
+    blockID = ceil(codePhase/samplesPerCode);
+    blockStart = (blockID-1)*samplesPerCode+1;
+    blockEnd = blockID*samplesPerCode;
 
+    % primary
+    primaryPeakRange = results(:,blockStart:blockEnd);
+    [peakSize,codePhase] = max(max(primaryPeakRange));
+    % secondary
+    peakBuffer = ceil(samplesPerCode/settings.codeLength);
+    N = size(primaryPeakRange,2);
+    maskID = mod((codePhase-peakBuffer:codePhase+peakBuffer)-1,N)+2;
+    secondaryPeakRange = primaryPeakRange;
+    secondaryPeakRange(acqCoarseBin,maskID) = -inf;
+    [secondPeakSize,~] = max(secondaryPeakRange(acqCoarseBin,:));
+
+    acqResults.peakMetric(PRN) = peakSize/secondPeakSize;
+
+    % %% Fine resolution frequency search =============================
+    % % If the result is above threshold, then there is a signal ...
+    % if acqResults.peakMetric(PRN) > settings.acqThreshold
+    %     %--- Indicate PRN number of the detected signal -------------------
+    %     fprintf('%02d ', PRN);
+    %     %--- Initialize arrays to speed up the code -----------------------
+    %     acqResults.carrFreq(PRN) = coarseFreqBin(acqCoarseBin);
+    %     % Save code phase acquisition result
+    %     acqResults.codePhase(PRN) = codePhase;
+    % 
+    % 
+    %     %% Downsampling recovery ============================================
+    %     % Find acquisition results corresponding to orignal sampling freq
+    %     if (exist('oldFreq', 'var') && settings.resamplingflag == 1)
+    %         % Find code phase
+    %         acqResults.codePhase(PRN) = floor((codePhase - 1)/ ...
+    %             settings.samplingFreq * oldFreq)+1;
+    % 
+    %         % Doppler frequency
+    %         doppler = acqResults.carrFreq(PRN) - settings.IF;
+    % 
+    %         % Carrier freq. corresponding to orignal sampling freq
+    %         acqResults.carrFreq(PRN) = doppler + oldIF;
+    %     end
+    % else
+    %     %--- No signal with this PRN --------------------------------------
+    %     fprintf('. ');
+    % end   % if (peakSize/secondPeakSize) > settings.acqThreshold
+    
     %% Fine resolution frequency search =============================
     % If the result is above threshold, then there is a signal ...
     if acqResults.peakMetric(PRN) > settings.acqThreshold
         %--- Indicate PRN number of the detected signal -------------------
         fprintf('%02d ', PRN);
+
         %--- Initialize arrays to speed up the code -----------------------
-        acqResults.carrFreq(PRN) = coarseFreqBin(acqCoarseBin);
+        % Antipodal form of E5aQ secondary code
+        secondCode = generateE5bQ_secondary(PRN);
+        %--- Generate 100msec long E5aQ primary codes sequence for given PRN
+        E5bQCode = generateE5bQcode(PRN,1);
+
+        codeValueIndex = floor((ts * (1:100*samplesPerCode)) / ...
+            (1/settings.codeFreqBasis));
+        longE5aQCode = E5bQCode((rem(codeValueIndex, settings.codeLength) + 1));
+        % 100ms incoming signal
+        sig100ms = longSignal(codePhase:codePhase + 100*samplesPerCode -1);
+
+        % 6091 Project additional datapoint in acqResults
+        acqResults.coarseBin(PRN) = coarseFreqBin(acqCoarseBin);
+
+        %--- Search different frequency bins ------------------------------
+        for FineBinIndex = 1 : NumOfFineBins
+
+            % Carrier frequencies of the frequency bins
+            FineFreqBins(FineBinIndex) = coarseFreqBin(acqCoarseBin) + ...
+                settings.acqSearchStep/2 - 5 * (FineBinIndex - 1);
+            % Generate local sine and cosine
+            sigCarr100ms = exp(-1i*FineFreqBins(FineBinIndex) * finePhasePoints);
+            % Wipe off E5aQ code and carrier from incoming signals to
+            % produce baseband signal
+            basebandSig = longE5aQCode .* sigCarr100ms .* sig100ms;
+
+            % Coherent integration for each code
+            for index = 1:100
+                sumPerCode(index) = sum( basebandSig( samplesPerCode*(index-1)+1:...
+                    samplesPerCode*index ) );
+            end
+
+            % Initialize maximal power for 10 NH code combiniations
+            maxPower = 0;
+            %--- Search different E5aQ secondary code combinations --------
+            for comIndex = 1:100
+                % Wipe off NH code
+                sumTieredCode = sumPerCode .* secondCode;
+                % Maximal coherent power for different NH code combiniations
+                maxPower = max(maxPower,abs(sum(sumTieredCode)));
+                % Shift NH code for next  combiniation
+                secondCode = circshift(secondCode',1)';
+            end % Search different NH code combiniations
+
+            FineResult(FineBinIndex) = maxPower;
+        end % FineBinIndex = 1 : NumOfFineBins
+
+        % Find the fine carrier freq. -------------------------------------
+        % Corresponding to the largest noncoherent power
+        [~,maxFinBin] = max(FineResult);
+        acqResults.carrFreq(PRN) = FineFreqBins(maxFinBin);
         % Save code phase acquisition result
         acqResults.codePhase(PRN) = codePhase;
 
-
-        %% Downsampling recovery ============================================
+        %signal found, if IF = 0 just change to 1 Hz to allow processing
+        if(acqResults.carrFreq(PRN) == 0)
+            acqResults.carrFreq(PRN) = 1;
+        end
+        %% Downsampling recovery ====================================
         % Find acquisition results corresponding to orignal sampling freq
         if (exist('oldFreq', 'var') && settings.resamplingflag == 1)
             % Find code phase
@@ -246,7 +360,7 @@ for PRN = settings.acqSatelliteList
         %--- No signal with this PRN --------------------------------------
         fprintf('. ');
     end   % if (peakSize/secondPeakSize) > settings.acqThreshold
-
+    
 end    % for PRN = satelliteList
 
 %=== Acquisition is over ==================================================

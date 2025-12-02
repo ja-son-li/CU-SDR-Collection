@@ -97,8 +97,8 @@ if (fid > 0)
 
         %--- Do the acquisition -------------------------------------------
         disp ('   Acquiring satellites...');
-        % acqResults = acquisition(data, settings);
-        acqResults = acquisition_parallel(data, settings);
+        acqResults = acquisition(data, settings);
+        %acqResults = acquisition_parallel(data, settings);
 
         save('acqResults')
     end

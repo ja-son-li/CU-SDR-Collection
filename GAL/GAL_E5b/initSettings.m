@@ -56,7 +56,8 @@ settings.skipNumberOfBytes     = 0;
 % This is a "default" name of the data file (signal record) to be used in
 % the post-processing mode
 
-settings.fileName           = '/home/jason/Documents/School/ASEN6091_Receiver/Data/E5FB/E5_FULLBAND_1.bin';
+%settings.fileName           = '/home/jason/Documents/School/ASEN6091_Receiver/Data/E5FB/E5_FULLBAND_1.bin';
+settings.fileName           = "C:\Users\jasp9644\Downloads\test_E5_10.bin";
 
 % Data type used to store one sample
 settings.dataType           = 'schar';
@@ -67,8 +68,8 @@ settings.dataType           = 'schar';
 settings.fileType           = 2;
 
 % Intermediate, sampling and code frequencies
-settings.IF                 = 15.345e6 ;             % [Hz]
-settings.samplingFreq       = 54e6;             % [Hz]
+settings.IF                 = 20e3;             % [Hz]
+settings.samplingFreq       = 18e6;             % [Hz]
 settings.codeFreqBasis      = 10.23e6;          % [Hz]
 
 % Define number of chips in a code period
@@ -81,7 +82,6 @@ settings.skipAcquisition    = 0;
 % up acquisition. As of June 2020, in-orbit Galileo SVs includes PRNs:
 % [1 2 3 4 5 7 8 9 11 12 13 14 15 18 19 21 22 24 25 26 27 30 31 33 36]
 settings.acqSatelliteList   = 1:36;
-settings.acqSatelliteList   = [24];
 
 % Band around IF to search for satellite signal. Depends on max Doppler.
 % It is single sideband, so the whole search band is tiwce of it.
@@ -89,9 +89,9 @@ settings.acqSearchBand          = 10000;           % [Hz]
 % Non-coherent integration times after 1ms coherent integration
 settings.acqNonCohTime      = 15;              %[ms]
 % Threshold for the signal presence decision rule
-settings.acqThreshold       = 4.5;
+settings.acqThreshold       = 2;
 % Frequency search step for coarse acquisition
-settings.acqSearchStep      = 60;                % [Hz]
+settings.acqSearchStep      = 500;                % [Hz]
 % Sampling rate threshold for downsampling 
 settings.resamplingThreshold    = 45e6;           % [Hz]
 % Enable/dissable use of downsampling for acquisition
